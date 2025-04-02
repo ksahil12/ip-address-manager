@@ -42,6 +42,7 @@ var (
 const (
 	IPAddressClaimFinalizer = "ipam.metal3.io/ipaddressclaim"
 	IPAddressFinalizer      = "ipam.metal3.io/ipaddress"
+	IpAddressLabel          = "ipAddress"
 )
 
 // IPPoolManagerInterface is an interface for a IPPoolManager.
@@ -288,6 +289,11 @@ func (m *IPPoolManager) capiUpdateAddresses(ctx context.Context) (int, error) {
 		if addressClaim.Status.AddressRef.Name != "" && addressClaim.DeletionTimestamp.IsZero() {
 			continue
 		}
+
+		if anyErrorInExistingRequests(addressClaim) {
+			continue
+		}
+
 		addresses, err = m.capiUpdateAddress(ctx, &addressClaim, addresses)
 		if err != nil {
 			return 0, err
@@ -295,6 +301,11 @@ func (m *IPPoolManager) capiUpdateAddresses(ctx context.Context) (int, error) {
 	}
 	m.updateStatusTimestamp()
 	return len(addresses), nil
+}
+
+func anyErrorInExistingRequests(addressClaim capipamv1.IPAddressClaim) bool {
+	return len(addressClaim.Status.Conditions) > 0 &&
+		addressClaim.Status.Conditions[0].Severity == clusterv1.ConditionSeverityError
 }
 
 // UpdateAddress creates metal3 ipaddress or deletes it. Address can be deleted if it
@@ -486,6 +497,9 @@ func (m *IPPoolManager) capiAllocateAddress(addressClaim *capipamv1.IPAddressCla
 
 	ipAllocated := false
 
+	acquireIp := ipamv1.IPAddressStr(addressClaim.ObjectMeta.Labels[IpAddressLabel])
+	acquireIpAllocated := false
+
 	for _, pool := range m.IPPool.Spec.Pools {
 		if ipAllocated {
 			break
@@ -497,6 +511,14 @@ func (m *IPPoolManager) capiAllocateAddress(addressClaim *capipamv1.IPAddressCla
 				break
 			}
 			index++
+
+			// Check if acquireIp is present and matches the current address
+			if acquireIp != "" && allocatedAddress != acquireIp {
+				continue
+			}
+			if acquireIp != "" && allocatedAddress == acquireIp {
+				acquireIpAllocated = true
+			}
 			// We have a pre-allocated ip, we just need to ensure that it matches the current address
 			// if it does not, continue and try the next address
 			if ipPreAllocated && allocatedAddress != preAllocatedAddress {
@@ -523,6 +545,22 @@ func (m *IPPoolManager) capiAllocateAddress(addressClaim *capipamv1.IPAddressCla
 			}
 		}
 	}
+
+	// We did not get requestedIp as AcquireIp did not match any available IP
+	if acquireIp != "" && acquireIpAllocated && !ipAllocated {
+		conditions := clusterv1.Conditions{}
+		conditions = append(conditions, clusterv1.Condition{
+			Type:               "ErrorMessage",
+			Status:             corev1.ConditionTrue,
+			LastTransitionTime: metav1.Now(),
+			Severity:           "Error",
+			Reason:             "ErrorMessage",
+			Message:            "Requested IP not available",
+		})
+		addressClaim.SetConditions(conditions)
+		return "", 0, nil, errors.New("Requested IP not available")
+	}
+
 	// We have a preallocated IP but we did not find it in the pools! It means it is
 	// misconfigured
 	if !ipAllocated && ipPreAllocated {

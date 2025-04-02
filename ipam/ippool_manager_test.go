@@ -2231,6 +2231,62 @@ var _ = Describe("IPPool manager", func() {
 			expectedGateway: (*ipamv1.IPAddressStr)(ptr.To("192.168.0.1")),
 			expectedPrefix:  24,
 		}),
+		Entry("One pool, with start and existing address, acquireIp label", testCapiCaseAllocateAddress{
+			ipPool: &ipamv1.IPPool{
+				Spec: ipamv1.IPPoolSpec{
+					Pools: []ipamv1.Pool{
+						{
+							Start: (*ipamv1.IPAddressStr)(ptr.To("192.168.0.11")),
+							End:   (*ipamv1.IPAddressStr)(ptr.To("192.168.0.20")),
+						},
+					},
+					Prefix:  24,
+					Gateway: (*ipamv1.IPAddressStr)(ptr.To("192.168.0.1")),
+				},
+			},
+			ipAddressClaim: &capipamv1.IPAddressClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "TestRef",
+					Labels: map[string]string{
+						IpAddressLabel: "192.168.0.16",
+					},
+				},
+			},
+			addresses: map[ipamv1.IPAddressStr]string{
+				ipamv1.IPAddressStr("192.168.0.12"): "bcde",
+				ipamv1.IPAddressStr("192.168.0.11"): "abcd",
+			},
+			expectedAddress: ipamv1.IPAddressStr("192.168.0.16"),
+			expectedGateway: (*ipamv1.IPAddressStr)(ptr.To("192.168.0.1")),
+			expectedPrefix:  24,
+		}),
+		Entry("One pool, with start and existing address, acquireIp label but alraedy acquired", testCapiCaseAllocateAddress{
+			ipPool: &ipamv1.IPPool{
+				Spec: ipamv1.IPPoolSpec{
+					Pools: []ipamv1.Pool{
+						{
+							Start: (*ipamv1.IPAddressStr)(ptr.To("192.168.0.11")),
+							End:   (*ipamv1.IPAddressStr)(ptr.To("192.168.0.20")),
+						},
+					},
+					Prefix:  24,
+					Gateway: (*ipamv1.IPAddressStr)(ptr.To("192.168.0.1")),
+				},
+			},
+			ipAddressClaim: &capipamv1.IPAddressClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "TestRef",
+					Labels: map[string]string{
+						IpAddressLabel: "192.168.0.12",
+					},
+				},
+			},
+			addresses: map[ipamv1.IPAddressStr]string{
+				ipamv1.IPAddressStr("192.168.0.12"): "bcde",
+				ipamv1.IPAddressStr("192.168.0.11"): "abcd",
+			},
+			expectError: true,
+		}),
 		Entry("One pool, with subnet and override prefix", testCapiCaseAllocateAddress{
 			ipPool: &ipamv1.IPPool{
 				Spec: ipamv1.IPPoolSpec{
