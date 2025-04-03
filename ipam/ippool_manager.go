@@ -290,10 +290,6 @@ func (m *IPPoolManager) capiUpdateAddresses(ctx context.Context) (int, error) {
 			continue
 		}
 
-		if anyErrorInExistingRequests(addressClaim) {
-			continue
-		}
-
 		addresses, err = m.capiUpdateAddress(ctx, &addressClaim, addresses)
 		if err != nil {
 			return 0, err
@@ -387,6 +383,9 @@ func (m *IPPoolManager) capiUpdateAddress(ctx context.Context,
 	addressClaim.SetConditions(conditions)
 
 	if addressClaim.DeletionTimestamp.IsZero() {
+		if anyErrorInExistingRequests(*addressClaim) {
+			return addresses, nil
+		}
 		addresses, err = m.capiCreateAddress(ctx, addressClaim, addresses)
 		if err != nil {
 			return addresses, err
