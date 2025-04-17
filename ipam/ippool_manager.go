@@ -376,6 +376,9 @@ func (m *IPPoolManager) capiUpdateAddress(ctx context.Context,
 	addressClaim.SetConditions(conditions)
 
 	if addressClaim.DeletionTimestamp.IsZero() {
+		if anyErrorInExistingRequests(*addressClaim) {
+			return addresses, nil
+		}
 		addresses, err = m.capiCreateAddress(ctx, addressClaim, addresses)
 		if err != nil {
 			return addresses, err
@@ -396,6 +399,11 @@ func (m *IPPoolManager) capiUpdateAddress(ctx context.Context,
 		}
 	}
 	return addresses, nil
+}
+
+func anyErrorInExistingRequests(addressClaim capipamv1.IPAddressClaim) bool {
+	return len(addressClaim.Status.Conditions) > 0 &&
+		addressClaim.Status.Conditions[0].Severity == clusterv1.ConditionSeverityError
 }
 
 // allocateAddress gets an (metal3)IpAddress for a (metal3)IPClaim.

@@ -1945,7 +1945,7 @@ var _ = Describe("IPPool manager", func() {
 			expectedGateway: (*ipamv1.IPAddressStr)(ptr.To("192.168.0.1")),
 			expectedPrefix:  24,
 		}),
-		Entry("One pool, with start and existing address, ipAddress annotation present but alraedy acquired", testCaseAllocateAddress{
+		Entry("One pool, with start and existing address, ipAddress annotation present but already acquired", testCaseAllocateAddress{
 			ipPool: &ipamv1.IPPool{
 				Spec: ipamv1.IPPoolSpec{
 					Pools: []ipamv1.Pool{
@@ -2378,7 +2378,7 @@ var _ = Describe("IPPool manager", func() {
 			expectedGateway: (*ipamv1.IPAddressStr)(ptr.To("192.168.0.1")),
 			expectedPrefix:  24,
 		}),
-		Entry("One pool, with start and existing address, ipAddress annotation but alraedy acquired", testCapiCaseAllocateAddress{
+		Entry("One pool, with start and existing address, ipAddress annotation but already acquired", testCapiCaseAllocateAddress{
 			ipPool: &ipamv1.IPPool{
 				Spec: ipamv1.IPPoolSpec{
 					Pools: []ipamv1.Pool{
