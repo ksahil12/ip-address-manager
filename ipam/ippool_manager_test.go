@@ -2247,8 +2247,8 @@ var _ = Describe("IPPool manager", func() {
 			ipAddressClaim: &capipamv1.IPAddressClaim{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "TestRef",
-					Labels: map[string]string{
-						IpAddressLabel: "192.168.0.16",
+					Annotations: map[string]string{
+						IPAddressAnnotation: "192.168.0.16",
 					},
 				},
 			},
@@ -2276,8 +2276,8 @@ var _ = Describe("IPPool manager", func() {
 			ipAddressClaim: &capipamv1.IPAddressClaim{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "TestRef",
-					Labels: map[string]string{
-						IpAddressLabel: "192.168.0.12",
+					Annotations: map[string]string{
+						IPAddressAnnotation: "192.168.0.12",
 					},
 				},
 			},

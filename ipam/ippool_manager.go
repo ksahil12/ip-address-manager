@@ -42,7 +42,7 @@ var (
 const (
 	IPAddressClaimFinalizer = "ipam.metal3.io/ipaddressclaim"
 	IPAddressFinalizer      = "ipam.metal3.io/ipaddress"
-	IpAddressLabel          = "ipAddress"
+	IPAddressAnnotation     = "ipAddress"
 )
 
 // IPPoolManagerInterface is an interface for a IPPoolManager.
@@ -496,7 +496,7 @@ func (m *IPPoolManager) capiAllocateAddress(addressClaim *capipamv1.IPAddressCla
 
 	ipAllocated := false
 
-	acquireIp := ipamv1.IPAddressStr(addressClaim.ObjectMeta.Labels[IpAddressLabel])
+	acquireIp := ipamv1.IPAddressStr(addressClaim.ObjectMeta.Annotations[IPAddressAnnotation])
 	acquireIpAllocated := false
 
 	for _, pool := range m.IPPool.Spec.Pools {
